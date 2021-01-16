@@ -5,6 +5,9 @@
 */
 
 #include <Mouse.h>
+#include <Keyboard.h>
+#include <ClickButton.h>
+
 
 int horz_pin = A0;
 int vert_pin = A1;
@@ -15,7 +18,8 @@ int vert_zero, horz_zero;
 int y_val, x_val;
 int right_click_flag = 0;
 int left_click_flag = 0;
-int scroll_click_flag = 0;
+int scroll_flag = 0;
+int zoom_flag = 0;
 
 // Higher sensitivity value = slower mouse, should be <= about 500
 const int sensitivity = 150;
@@ -23,8 +27,7 @@ const int sensitivity = 150;
 // To invert, to -1
 int invert_mouse = 1;
 
-// Reaction time in ms
-int reaction_time = 500;
+ClickButton key(scroll_pin, LOW, CLICKBTN_PULLUP);
 
 void setup() {
   pinMode(horz_pin, INPUT);
@@ -34,36 +37,65 @@ void setup() {
   pinMode(9, INPUT_PULLUP);
   digitalWrite(joystick_sel_pin, HIGH);
   delay(1000);
-  
+
   vert_zero = analogRead(vert_pin);
-  horz_zero = analogRead(horz_pin); 
+  horz_zero = analogRead(horz_pin);
 
   Mouse.begin();
+  key.debounceTime   = 20;   // Debounce timer in ms
+  key.multiclickTime = 250;  // Time limit for multi clicks
+  key.longClickTime  = 250;  // time until "held-down clicks" register
 }
 
 void loop() {
   y_val = analogRead(vert_pin) - vert_zero;
   x_val = analogRead(horz_pin) - horz_zero;
 
-  if (digitalRead(scroll_pin) == 0 && scroll_click_flag) {
+  key.Update();
+
+  int scroll_click_count = key.clicks;
+
+  // Scroll Mode
+  if ((scroll_click_count == -1 || scroll_flag) && key.depressed == true) {
+    scroll_flag = 1;
     if (y_val <= -20) {
-      Mouse.move(0,0,-1);
+      Mouse.move(0, 0, -1);
       delay(100);
-    } else if ( y_val >= 20) {
-      Mouse.move(0,0,1);
+    } else if (y_val >= 20) {
+      Mouse.move(0, 0, 1);
       delay(100);
     }
-  } else if (digitalRead(scroll_pin) && scroll_click_flag) {
-    scroll_click_flag = 0;
+  } else {
+    scroll_flag = 0;
   }
 
-  if (x_val != 0) {
-    Mouse.move(invert_mouse * (x_val / sensitivity), 0, 0);    
-  }
-  if (y_val != 0) {
-    Mouse.move(0, invert_mouse * (y_val / sensitivity), 0);    
+  // Zoom Mode
+  if ((scroll_click_count == -2 || zoom_flag) && key.depressed == true) {
+    zoom_flag = 1;
+    if (y_val <= -20) {
+      Keyboard.press(KEY_LEFT_GUI);
+      Keyboard.press('=');
+      Keyboard.releaseAll();
+      delay(500);
+    } else if ( y_val >= 20) {
+      Keyboard.press(KEY_LEFT_GUI);
+      Keyboard.press('-');
+      Keyboard.releaseAll();
+      delay(500);
+    }
+  } else {
+    zoom_flag = 0;
   }
 
+  // Normal Mode
+  if (x_val != 0 && !scroll_flag) {
+    Mouse.move(invert_mouse * (x_val / sensitivity), 0, 0);
+  }
+  if (y_val != 0 && !scroll_flag) {
+    Mouse.move(0, invert_mouse * (y_val / sensitivity), 0);
+  }
+
+  // Detect Left and Right Clicks
   if (digitalRead(teeth_pin) == 0 && !left_click_flag) {
     left_click_flag = 1;
     Mouse.press(MOUSE_LEFT);
@@ -71,7 +103,6 @@ void loop() {
     left_click_flag = 0;
     Mouse.release(MOUSE_LEFT);
   }
-  
   if (digitalRead(joystick_sel_pin) == 0 && !right_click_flag) {
     right_click_flag = 1;
     Mouse.press(MOUSE_RIGHT);
@@ -79,8 +110,4 @@ void loop() {
     right_click_flag = 0;
     Mouse.release(MOUSE_RIGHT);
   }
-
-  if (digitalRead(scroll_pin) == 0 && !scroll_click_flag) {
-    scroll_click_flag = 1;
-  } 
 }
