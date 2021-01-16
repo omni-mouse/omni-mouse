@@ -27,6 +27,10 @@ const int sensitivity = 150;
 // To invert, to -1
 int invert_mouse = 1;
 
+// Set exponential acceleration flag and value of base (greater than 1)
+boolean exponential_acceleration = false;
+int base = 1.5;
+
 ClickButton key(scroll_pin, LOW, CLICKBTN_PULLUP);
 
 void setup() {
@@ -51,9 +55,34 @@ void loop() {
   y_val = analogRead(vert_pin) - vert_zero;
   x_val = analogRead(horz_pin) - horz_zero;
 
+  /* debugging
+  Serial.print("x value: ");
+  Serial.println(x_val);
+  Serial.print("y value: ");
+  Serial.println(y_val);
+  Serial.print("scroll flag: ");
+  Serial.println(scroll_flag);
+  delay(500);
+  */
+
   key.Update();
 
   int scroll_click_count = key.clicks;
+
+  // Exponential cursor acceleration
+  if (exponential_acceleration) {
+    if (x_val > 0) {
+      x_val =  (int) pow(base,x_val);
+    } else if (x_val < 0) {
+      x_val = -(int) pow(base,-x_val);
+    }
+    if (y_val > 0) {
+      y_val =  (int) pow(base,y_val);
+    } else if (y_val < 0) {
+      y_val = -(int) pow(base,-y_val);
+    }
+   }
+
 
   // Scroll Mode
   if ((scroll_click_count == -1 || scroll_flag) && key.depressed == true) {
