@@ -1,7 +1,8 @@
 /*
-  Description: Sketch for wired tongue operated mouse.
+  Description: Adaptive hands-free computer mouse that can be used by people with quadriplegia. 
+  Supports left click, right click, scroll, and zoom on the hardware level.
   Date: January 2021
-  Author: Naren Yenuganti
+  Authors: Naren Yenuganti and Dylan Chow
 */
 
 #include <Mouse.h>
@@ -24,14 +25,14 @@ int range = 12;
 int center = range / 2;
 int threshold = range / 4;
 
-const double sensitivity = 1;
+const float sensitivity = .6;
 
 // To invert, to -1
 int invert_mouse = 1;
 
 // Set exponential acceleration flag and value of base (1 < base < 2)
 const boolean exponential_acceleration = true;
-const float base = 1.5;
+const float base = 1.4;
 
 ClickButton key(scroll_pin, LOW, CLICKBTN_PULLUP);
 
@@ -73,9 +74,10 @@ void loop() {
 
   // Normal Mode
   if (!scroll_flag && !zoom_flag) {
-    Mouse.move(x_val, -1 * y_val, 0);
+    int x = (int) (x_val * sensitivity);
+    int y = (int) (-1 * y_val * sensitivity);
+    Mouse.move(x, y, 0);
   }
-  
 
   Serial.print("x value: ");
   Serial.println(x_val);
@@ -83,8 +85,6 @@ void loop() {
   Serial.println(y_val);
   Serial.print("scroll flag: ");
   Serial.println(scroll_flag);
-  //delay(100);
- 
   
   key.Update();
   int scroll_click_count = key.clicks;
@@ -92,12 +92,12 @@ void loop() {
   // Scroll Mode
   if ((scroll_click_count == -1 || scroll_flag) && key.depressed == true) {
     scroll_flag = 1;
-    if (y_val <= -20) {
-      Mouse.move(0, 0, -1);
-      delay(100);
-    } else if (y_val >= 20) {
-      Mouse.move(0, 0, 1);
-      delay(100);
+    if (y_val <= -1) {
+      Mouse.move(0, 0, (int) (y_val * sensitivity / 2));
+      delay(60);
+    } else if (y_val >= 1) {
+      Mouse.move(0, 0, (int) (y_val * sensitivity / 2));
+      delay(60);
     }
   } else {
     scroll_flag = 0;
@@ -106,12 +106,12 @@ void loop() {
   // Zoom Mode
   if ((scroll_click_count == -2 || zoom_flag) && key.depressed == true) {
     zoom_flag = 1;
-    if (y_val <= -20) {
+    if (y_val <= -1) {
       Keyboard.press(KEY_LEFT_GUI);
       Keyboard.press('=');
       Keyboard.releaseAll();
       delay(500);
-    } else if ( y_val >= 20) {
+    } else if ( y_val >= 1) {
       Keyboard.press(KEY_LEFT_GUI);
       Keyboard.press('-');
       Keyboard.releaseAll();
@@ -138,6 +138,7 @@ void loop() {
   }
 }
 
+// Returns values between [-range/2, range/2]
 int getDistance(int axis) {
   int reading = analogRead(axis);
   reading = map(reading, 0, 1023, 0, range);
