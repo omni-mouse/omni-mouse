@@ -24,15 +24,14 @@ int range = 12;
 int center = range / 2;
 int threshold = range / 4;
 
-// Higher sensitivity value = slower mouse, should be <= about 500
-const int sensitivity = 150;
+const double sensitivity = 1;
 
 // To invert, to -1
 int invert_mouse = 1;
 
 // Set exponential acceleration flag and value of base (greater than 1)
 boolean exponential_acceleration = true;
-int base = 2;
+int base = 1.5;
 
 ClickButton key(scroll_pin, LOW, CLICKBTN_PULLUP);
 
@@ -61,14 +60,14 @@ void loop() {
   // Exponential cursor acceleration
   if (exponential_acceleration) {
     if (x_val > 0) {
-      x_val = pow(base,x_val);
+      x_val = (int) pow(base,x_val);
     } else if (x_val < 0) {
-      x_val = -pow(base,-x_val);
+      x_val = -(int) pow(base,-x_val);
     }
     if (y_val > 0) {
-      y_val = pow(base,y_val);
+      y_val = (int) pow(base,y_val);
     } else if (y_val < 0) {
-      y_val = -pow(base,-y_val);
+      y_val = -(int) pow(base,-y_val);
     }
    }
 
@@ -76,6 +75,7 @@ void loop() {
   if (!scroll_flag && !zoom_flag) {
     Mouse.move(x_val, -1 * y_val, 0);
   }
+  
 
   Serial.print("x value: ");
   Serial.println(x_val);
@@ -83,12 +83,11 @@ void loop() {
   Serial.println(y_val);
   Serial.print("scroll flag: ");
   Serial.println(scroll_flag);
-  //delay(500);
-
+  //delay(100);
+ 
+  
   key.Update();
-
   int scroll_click_count = key.clicks;
-
 
   // Scroll Mode
   if ((scroll_click_count == -1 || scroll_flag) && key.depressed == true) {
