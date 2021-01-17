@@ -20,6 +20,9 @@ int right_click_flag = 0;
 int left_click_flag = 0;
 int scroll_flag = 0;
 int zoom_flag = 0;
+int range = 12;
+int center = range / 2;
+int threshold = range / 4;
 
 // Higher sensitivity value = slower mouse, should be <= about 500
 const int sensitivity = 150;
@@ -28,8 +31,8 @@ const int sensitivity = 150;
 int invert_mouse = 1;
 
 // Set exponential acceleration flag and value of base (greater than 1)
-boolean exponential_acceleration = false;
-int base = 1.5;
+boolean exponential_acceleration = true;
+int base = 2;
 
 ClickButton key(scroll_pin, LOW, CLICKBTN_PULLUP);
 
@@ -52,36 +55,39 @@ void setup() {
 }
 
 void loop() {
-  y_val = analogRead(vert_pin) - vert_zero;
-  x_val = analogRead(horz_pin) - horz_zero;
+  y_val = getDistance(vert_pin);
+  x_val = getDistance(horz_pin);
 
-  /* debugging
+  // Exponential cursor acceleration
+  if (exponential_acceleration) {
+    if (x_val > 0) {
+      x_val = pow(base,x_val);
+    } else if (x_val < 0) {
+      x_val = -pow(base,-x_val);
+    }
+    if (y_val > 0) {
+      y_val = pow(base,y_val);
+    } else if (y_val < 0) {
+      y_val = -pow(base,-y_val);
+    }
+   }
+
+  // Normal Mode
+  if (!scroll_flag && !zoom_flag) {
+    Mouse.move(x_val, -1 * y_val, 0);
+  }
+
   Serial.print("x value: ");
   Serial.println(x_val);
   Serial.print("y value: ");
   Serial.println(y_val);
   Serial.print("scroll flag: ");
   Serial.println(scroll_flag);
-  delay(500);
-  */
+  //delay(500);
 
   key.Update();
 
   int scroll_click_count = key.clicks;
-
-  // Exponential cursor acceleration
-  if (exponential_acceleration) {
-    if (x_val > 0) {
-      x_val =  (int) pow(base,x_val);
-    } else if (x_val < 0) {
-      x_val = -(int) pow(base,-x_val);
-    }
-    if (y_val > 0) {
-      y_val =  (int) pow(base,y_val);
-    } else if (y_val < 0) {
-      y_val = -(int) pow(base,-y_val);
-    }
-   }
 
 
   // Scroll Mode
@@ -116,14 +122,6 @@ void loop() {
     zoom_flag = 0;
   }
 
-  // Normal Mode
-  if (x_val != 0 && !scroll_flag) {
-    Mouse.move(invert_mouse * (x_val / sensitivity), 0, 0);
-  }
-  if (y_val != 0 && !scroll_flag) {
-    Mouse.move(0, invert_mouse * (y_val / sensitivity), 0);
-  }
-
   // Detect Left and Right Clicks
   if (digitalRead(teeth_pin) == 0 && !left_click_flag) {
     left_click_flag = 1;
@@ -139,4 +137,14 @@ void loop() {
     right_click_flag = 0;
     Mouse.release(MOUSE_RIGHT);
   }
+}
+
+int getDistance(int axis) {
+  int reading = analogRead(axis);
+  reading = map(reading, 0, 1023, 0, range);
+  int distance = reading - center;
+  if (abs(distance) < threshold) {
+    distance = 0;
+  }
+  return distance;
 }
