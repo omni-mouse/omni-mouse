@@ -70,15 +70,15 @@ void loop() {
    
   // Normal Mode
   if (!scroll_flag && !zoom_flag) {
-    if (y_val != 0) {
+    Serial.print("x value: ");
+    Serial.println(x_val);
+    Serial.print("y value: ");
+    Serial.println(y_val);
+    if (y_val > 1 || y_val < -1) {
       Mouse.move(0, y_val, 0);  // move mouse on y axis
-      //Serial.print("y value: ");
-      //Serial.println(y_val);
     }
-    if (x_val != 0) {
+    if (x_val > 1 || x_val < -1) {
       Mouse.move(x_val, 0, 0);  // move mouse on x axis
-      //Serial.print("x value: ");
-      //Serial.println(x_val);
     }
     while(millis() - last_loop < loop_period) {
       // delay
