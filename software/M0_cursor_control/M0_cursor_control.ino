@@ -2,9 +2,9 @@
 
 #include <Mouse.h>
 
-int x = A3;
-int y = A4;
-const int sensitivity = 20; // larger sensitivity --> slower mouse
+int x = A4;
+int y = A3;
+const int sensitivity = 23; // larger sensitivity --> slower mouse
 const unsigned long loopPeriod = 15; // larger loop_period --> more delay
 int yZero, xZero;
 boolean debug = true;
@@ -51,7 +51,7 @@ void loop() {
   if (yVal > 1 || yVal < -1) {
       Mouse.move(0, yVal, 0);  // move mouse on y axis
     }
-    if (xVal > 1 || yVal < -1) {
+    if (xVal > 1 || xVal < -1) {
       Mouse.move(xVal, 0, 0);  // move mouse on x axis
     }
     while(millis() - lastLoop < loopPeriod) {
