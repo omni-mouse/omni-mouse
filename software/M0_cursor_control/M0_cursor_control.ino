@@ -4,15 +4,18 @@
 
 int x = A4;
 int y = A3;
+int airSensor = A0;
 const int sensitivity = 23; // larger sensitivity --> slower mouse
 const unsigned long loopPeriod = 15; // larger loop_period --> more delay
 int yZero, xZero;
-boolean debug = true;
+boolean debugCursor = false;
+boolean debugAirSensor = true;
 
 
 void setup() {
   pinMode(x, INPUT);
   pinMode(y, INPUT);
+  pinMode(airSensor, INPUT);
 
   yZero = analogRead(y);
   xZero = analogRead(x);
@@ -27,7 +30,7 @@ void loop() {
   int yVal = (yReading - yZero) / sensitivity;
   int xVal = (xReading - xZero) / sensitivity;
   
-  if (debug) {
+  if (debugCursor) {
     Serial.print("yZero :");
     Serial.println(yZero);
     Serial.print("xZero :");
@@ -45,6 +48,11 @@ void loop() {
     Serial.println(xVal);
     Serial.print("y value: ");
     Serial.println(yVal);
+  }
+
+  if (debugAirSensor) {
+    int reading = analogRead(airSensor);
+    Serial.println(reading);
   }
 
 
