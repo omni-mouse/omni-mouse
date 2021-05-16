@@ -58,6 +58,7 @@ void setup() {
   
   y_zero = analogRead(y);
   x_zero = analogRead(x);
+  rest = analogRead(air_sensor);
 }
 
 void loop() {
